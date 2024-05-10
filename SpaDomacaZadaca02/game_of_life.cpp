@@ -1,57 +1,80 @@
 #include "game_of_life.h"
 #include <io.h>
 #include <chrono>
-#include <thread>
+#include<ctime>
 
 using namespace std;
 
-void game_of_life::napravi_red(vector<vector<bool>>& sucelje)
+game_of_life::game_of_life(sf::RenderWindow *window, vector<vector<bool>>& sucelje)
 {
+    this->window = window;
+    this->sucelje = sucelje;
+    srand(time(nullptr));
+}
+
+void game_of_life::napravi_red()
+{
+    float sirina_stanice = static_cast<float>(window->getSize().x) / stupac;
+    float visina_stanice = static_cast<float>(window->getSize().y) / red;
+    float dimenzije_stanice = min(sirina_stanice, visina_stanice);
+
     for (int i = 0; i < stupac; ++i) {
         for (int j = 0; j < red; ++j) {
-              std::this_thread::sleep_for(std::chrono::microseconds(100));
-            cout << (sucelje[i][j] ? ziva_celija : mrtva_celija) << ' ';
+            sf::RectangleShape oblik_stanice(sf::Vector2f(sirina_stanice, visina_stanice));
+            oblik_stanice.setPosition(i * sirina_stanice, j * visina_stanice);
+            if (sucelje[i][j]) {
+                oblik_stanice.setFillColor(sf::Color::Cyan);
+            }
+            else {
+                oblik_stanice.setFillColor(sf::Color::Black);
+            }
+            window->draw(oblik_stanice);
         }
-        cout << std::endl;
     }
 }
 
-void game_of_life::napravi_sucelje(vector<vector<bool>>& sucelje)
+void game_of_life::napravi_sucelje()
 {
     for (int i = 0; i < stupac; ++i) {
         for (int j = 0; j < red; ++j) {
-            sucelje[i][j] = rand() % 2 == 0;
+            double randomValue = 1 + rand() % (100 - 1 + 1);
+            if (randomValue <= 25) {
+                sucelje[i][j] = true;
+            }
+            else {
+                sucelje[i][j] = false;
+            }
         }
     }
 }
 
-void game_of_life::azuriraj_sucelje(vector<vector<bool>>& sucelje)
+void game_of_life::azuriraj_sucelje()
 {
-    vector<vector<bool>> novo_sucelje(sucelje); // Create a copy of the grid
+    vector<vector<bool>> novo_sucelje(sucelje);
     for (int i = 0; i < stupac; ++i) {
         for (int j = 0; j < red; ++j) {
-            int zivi_susjed = prebroji_zive_susjede(sucelje, i, j);
+            int zivi_susjed = prebroji_zive_susjede(i, j);
             if (sucelje[i][j]) {
                 if (zivi_susjed < 2 || zivi_susjed > 3) {
-                    novo_sucelje[i][j] = false; // Cell dies due to underpopulation or overpopulation
+                    novo_sucelje[i][j] = false;
                 }
             }
             else {
                 if (zivi_susjed == 3) {
-                    novo_sucelje[i][j] = true; // Cell becomes alive due to reproduction
+                    novo_sucelje[i][j] = true;
                 }
             }
         }
     }
-    sucelje = novo_sucelje; // Update the original grid with the new state
+    sucelje = novo_sucelje;
 }
 
-int game_of_life::prebroji_zive_susjede(vector<vector<bool>>& sucelje, int x, int y)
+int game_of_life::prebroji_zive_susjede(int x, int y)
 {
     int count = 0;
     for (int i = -1; i <= 1; ++i) {
         for (int j = -1; j <= 1; ++j) {
-            if (i == 0 && j == 0) continue; // Skip the current cell
+            if (i == 0 && j == 0) continue;
             int nx = x + i;
             int ny = y + j;
             if (nx >= 0 && nx < stupac && ny >= 0 && ny < red && sucelje[nx][ny]) {
